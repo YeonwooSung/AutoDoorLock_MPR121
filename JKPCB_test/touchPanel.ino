@@ -16,6 +16,14 @@ void buzzer_test();
 void playSampleSong();
 void buzzer_hello_world();
 void buzzer_wrongInput();
+void set_door_is_opened();
+
+uint16_t getIntPhoto1Obtain();
+void setIntPhoto1Obtain(uint16_t val);
+void enablePhoto1Int();
+void disablePhoto1Int();
+
+
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 cap = Adafruit_MPR121();
@@ -85,43 +93,43 @@ void compareInputWithKey() {
 }
 
 void resetInput() {
-  Serial.println("Initialise the input!");
+    Serial.println("Initialise the input!");
 
-  // reinitialise the array and index value
-  input_index = 0;
-  inputVal[33];
+    // reinitialise the array and index value
+    input_index = 0;
+    inputVal[33];
 
-  time_limit = 0; // change the value of time limit to 0
+    time_limit = 0; // change the value of time limit to 0
 
-  //TODO reset -> blink?
+    //TODO reset -> blink?
 }
 
 void setUpTimeLimit() {
-  time_limit = millis() + INTERVAL;
+    time_limit = millis() + INTERVAL;
 }
 
 void buildInput(uint16_t touchedKey) {
-  //unsigned char keyChar = (unsigned char) touchedKey;
-  unsigned char keyChar = (unsigned char) MAP[touchedKey];
+    //unsigned char keyChar = (unsigned char) touchedKey;
+    unsigned char keyChar = (unsigned char) MAP[touchedKey];
 
-  inputVal[input_index] = keyChar;
-  input_index += 1;
+    inputVal[input_index] = keyChar;
+    input_index += 1;
 
-  // use switch statement to check if the input character is either sharp characeter or astroid character.
-  switch (keyChar) {
-    case '*' :
-      resetInput(); //reset the input to handle the astroid key
-      setUpTimeLimit();
-      needToBlink = true;
-      break;
-    case '#' :
-      compareInputWithKey(); //compare the input values with the key
-      break;
-    default:
-      Serial.print("Input = ");
-      Serial.println(keyChar);
-      setUpTimeLimit();
-  }
+    // use switch statement to check if the input character is either sharp characeter or astroid character.
+    switch (keyChar) {
+        case '*' :
+            resetInput(); //reset the input to handle the astroid key
+            setUpTimeLimit();
+            needToBlink = true;
+            break;
+        case '#' :
+            compareInputWithKey(); //compare the input values with the key
+            break;
+        default:
+            Serial.print("Input = ");
+            Serial.println(keyChar);
+            setUpTimeLimit();
+    }
 }
 
 void touchPanel_setup() {
@@ -145,59 +153,7 @@ void touchPanel_setup() {
   pinMode(LED_PIN, OUTPUT);
 }
 
-void touchPanel_main() {
-  if (time_limit != 0 && millis() > time_limit) {
-    Serial.println("Timeout!!");
-    isWokenUp = false;
-
-    resetInput();
-    background_LED_off();
-
-    // reset our state
-    lasttouched = currtouched;
-    intTouchIRQObtain = 0;
-
-    return;
-  }
-
-  if (needToBlink) {
-      if (input_is_wrong) {
-          buzzer_wrongInput();
-          //buzzer_test();
-          //playSampleSong();
-          input_is_wrong = false;
-      }
-
-      background_LED_off();
-      delay(100);
-      background_LED_on();
-      delay(100);
-      background_LED_off();
-      delay(100);
-      background_LED_on();
-      needToBlink = false;
-
-      return;
-  }
-
-  if (isValidInput) {
-      Serial.println("Start moving the motor");
-      motorControl_fwd();
-      delay(5000);
-      motorControl_brake();
-      Serial.println("Motor stopped");
-
-      buzzer_hello_world();
-
-      isValidInput = false;
-
-      return;
-  }
-
-  if (intTouchIRQObtain == 0) return;
-
-  //Serial.println("Touch IRQ");
-
+void getOneKey(){
   // Get the currently touched pads
   currtouched = cap.touched();
 
@@ -239,5 +195,73 @@ void touchPanel_main() {
 
   // reset our state
   lasttouched = currtouched;
-  intTouchIRQObtain = 0;
+  intTouchIRQObtain = 0; 
+}
+
+void door_open() {
+    enablePhoto1Int();
+    Serial.println("Start moving the motor - fwd");
+    motorControl_fwd();
+
+    while (getIntPhoto1Obtain() == 0) delay(10);
+
+    Serial.println("interrupt occurred => intPhoto1Obtain");
+    motorControl_brake();
+    setIntPhoto1Obtain(0);
+    disablePhoto1Int();
+    resetInput();
+
+    Serial.println("Motor stopped");
+    buzzer_hello_world();
+    isValidInput = false;
+
+    //TODO
+    set_door_is_opened();
+}
+
+void led_blink() {
+    if (input_is_wrong) {
+        buzzer_wrongInput();
+        //buzzer_test();
+        //playSampleSong();
+        input_is_wrong = false;
+    }
+
+    background_LED_off();
+    delay(100);
+    background_LED_on();
+    delay(100);
+    background_LED_off();
+    delay(100);
+    background_LED_on();
+    needToBlink = false;
+}
+
+void process_timeout() {
+    Serial.println("Timeout!!");
+    isWokenUp = false;
+
+    resetInput();
+    background_LED_off();
+
+    // reset our state
+    lasttouched = currtouched;
+    intTouchIRQObtain = 0;
+}
+
+void touchPanel_main() {
+  if (time_limit != 0 && millis() > time_limit) {
+    process_timeout();
+    return;
+  }
+  if (needToBlink) {
+      led_blink();
+      return;
+  }
+  if (isValidInput) {
+    door_open();
+    return;
+  }
+  if (intTouchIRQObtain == 0) return;
+  getOneKey();
 }

@@ -12,6 +12,36 @@ uint16_t intPhoto2Obtain = 0;
 uint16_t intMsensorObtain = 0;
 uint16_t intTouchIRQObtain = 0;
 
+uint16_t getIntMsensorObtain() {
+    return intMsensorObtain;
+}
+
+uint16_t getIntPhoto2Obtain() {
+    return intPhoto2Obtain;
+}
+
+void setIntPhoto2Obtain(uint16_t val) {
+    Serial.print("set Photo2 : ");
+    Serial.println( val );
+    intPhoto2Obtain = val;
+}
+
+uint16_t getIntPhoto1Obtain() {
+    return intPhoto1Obtain;
+}
+
+void setIntPhoto1Obtain(uint16_t val) {
+    Serial.print("set Photo1 : ");
+    Serial.println( val );
+    intPhoto1Obtain = val;
+}
+
+void setIntMsensorObtain(uint16_t val) {
+    Serial.print("Msensor : ");
+    Serial.println( val );
+    intMsensorObtain = val;
+}
+
 // Interrupt handler for Dev board on-board switch
 void IRAM_ATTR SWITCH_ISR() {
     // Interrupt flag on
@@ -27,12 +57,14 @@ void IRAM_ATTR PIR_ISR() {
 // Interrupt handler for 
 void IRAM_ATTR Photo1_ISR() {
     // Interrupt flag on
+    Serial.print("p1 int\n");
     intPhoto1Obtain = 1;
 }
 
 // Interrupt handler for 
 void IRAM_ATTR Photo2_ISR() {
     // Interrupt flag on
+    Serial.print("p2 int\n");
     intPhoto2Obtain = 1;
 }
 
@@ -46,7 +78,46 @@ void IRAM_ATTR TouchIRQ_ISR() {
 // Interrupt handler for 
 void IRAM_ATTR Msensor_ISR() {
     // Interrupt flag on
+    Serial.print("M  int\n");
     intMsensorObtain = 1;
+}
+
+void enablePhoto1Int() {
+    Serial.println("enable p1");
+    attachInterrupt(digitalPinToInterrupt(PHOTO1_PIN), Photo1_ISR, FALLING);
+}
+
+void disablePhoto1Int() {
+    Serial.println("disable p1");
+    detachInterrupt(digitalPinToInterrupt(PHOTO1_PIN));
+}
+
+void enablePhoto2Int() {
+    Serial.println("enable p2");
+    attachInterrupt(digitalPinToInterrupt(PHOTO2_PIN), Photo2_ISR, FALLING);
+}
+
+void disablePhoto2Int() {
+    Serial.println("disable p2");
+    detachInterrupt(digitalPinToInterrupt(PHOTO2_PIN));
+}
+
+void enableMsensorInt() {
+    Serial.println("enable M");
+    attachInterrupt(digitalPinToInterrupt(MSENSOR_PIN), Msensor_ISR, FALLING);
+}
+
+void disableMsensorInt() {
+    Serial.println("disable M");
+    detachInterrupt(digitalPinToInterrupt(MSENSOR_PIN));
+}
+
+void enablePIRInt() {
+    attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIR_ISR, FALLING);
+}
+
+void disablePIRInt() {
+    detachInterrupt(digitalPinToInterrupt(PIR_PIN));
 }
 
 void intHandler_setup() {
@@ -60,8 +131,8 @@ void intHandler_setup() {
     attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIR_ISR, FALLING);   
     pinMode(MSENSOR_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(MSENSOR_PIN), Msensor_ISR, FALLING);
-    pinMode(TOUCH_IRQ_PIN, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(TOUCH_IRQ_PIN), TouchIRQ_ISR, FALLING);
+    //pinMode(TOUCH_IRQ_PIN, INPUT_PULLUP);
+    //attachInterrupt(digitalPinToInterrupt(TOUCH_IRQ_PIN), TouchIRQ_ISR, FALLING);
 }
 
 /*
@@ -88,8 +159,8 @@ void intHandler_main() {
     Serial.println("Interrupt from Msensor happen");
     intMsensorObtain = 0;
   }
-  if(intTouchIRQObtain) {
-    Serial.println("Interrupt from Touch happen");
-    intTouchIRQObtain = 0;
-  }  
+//  if(intTouchIRQObtain) {
+//    Serial.println("Interrupt from Touch happen");
+//    intTouchIRQObtain = 0;
+//  }  
 }
