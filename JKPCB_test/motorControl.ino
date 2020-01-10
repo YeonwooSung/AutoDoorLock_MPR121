@@ -183,9 +183,8 @@ void  led_rgb_test2() {
 
   for (int i = 0; i < 3; i++) {
     int col = colors[i];
-    
-    while(brightness < 1023)
-    {
+
+    while(brightness < 1023) {
       // set the brightness 
       ledcWrite(col, brightness);
       //ledcWrite(LED_GREEN_CHANNEL, brightness);
@@ -206,6 +205,7 @@ void  led_rgb_test2() {
     ledcWrite(col, brightness);
   }
 }
+
 void  motorControl_fwd() {
       ledcWrite(MOTOR_FWD_CHANNEL, 512);  // 50%
       ledcWrite(MOTOR_REV_CHANNEL, 0);

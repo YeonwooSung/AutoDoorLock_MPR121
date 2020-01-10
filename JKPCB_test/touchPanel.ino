@@ -17,11 +17,22 @@ void playSampleSong();
 void buzzer_hello_world();
 void buzzer_wrongInput();
 void set_door_is_opened();
+boolean isDoorOpen();
 
 uint16_t getIntPhoto1Obtain();
+uint16_t getIntPhoto2Obtain();
 void setIntPhoto1Obtain(uint16_t val);
+void setIntPhoto2Obtain(uint16_t val);
 void enablePhoto1Int();
+void enablePhoto2Int();
+void enablePIRInt();
 void disablePhoto1Int();
+void disablePhoto2Int();
+void disablePIRInt();
+
+void dosRecv_main();
+boolean isValidSound();
+void setValidSound(boolean b);
 
 
 
@@ -153,6 +164,21 @@ void touchPanel_setup() {
   pinMode(LED_PIN, OUTPUT);
 }
 
+void jiipKeyWakeUp() {
+    isWokenUp = true;
+    background_LED_on();
+    setUpTimeLimit();
+    disablePIRInt(); // diable PIR interrupt handler
+    dosRecv_main();
+}
+
+void jiipKeySleep() {
+    isWokenUp = false;
+    resetInput();
+    background_LED_off();
+    enablePIRInt();
+}
+
 void getOneKey(){
   // Get the currently touched pads
   currtouched = cap.touched();
@@ -161,10 +187,7 @@ void getOneKey(){
       lasttouched = currtouched;
       intTouchIRQObtain = 0;
 
-      isWokenUp = true;
-
-      background_LED_on();
-      setUpTimeLimit();
+      jiipKeyWakeUp();
       return;
   }
 
@@ -199,6 +222,8 @@ void getOneKey(){
 }
 
 void door_open() {
+    if (isDoorOpen()) return;
+
     enablePhoto1Int();
     Serial.println("Start moving the motor - fwd");
     motorControl_fwd();
@@ -214,6 +239,7 @@ void door_open() {
     Serial.println("Motor stopped");
     buzzer_hello_world();
     isValidInput = false;
+    setValidSound(false);
 
     //TODO
     set_door_is_opened();
@@ -239,11 +265,7 @@ void led_blink() {
 
 void process_timeout() {
     Serial.println("Timeout!!");
-    isWokenUp = false;
-
-    resetInput();
-    background_LED_off();
-
+    jiipKeySleep();
     // reset our state
     lasttouched = currtouched;
     intTouchIRQObtain = 0;
@@ -258,7 +280,7 @@ void touchPanel_main() {
       led_blink();
       return;
   }
-  if (isValidInput) {
+  if (isValidInput || isValidSound()) {
     door_open();
     return;
   }

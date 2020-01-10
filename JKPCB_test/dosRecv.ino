@@ -29,23 +29,34 @@ static chirp_sdk_t *chirp = NULL;
 static chirp_sdk_state_t currentState = CHIRP_SDK_STATE_NOT_CREATED;
 static bool startTasks = false;
 
+boolean validSound = false;
+
 // Function definitions --------------------------------------------------------
 
 void setupChirp();
 void chirpErrorHandler(chirp_sdk_error_code_t code);
 void setupAudioInput(int sample_rate);
+void door_open();
+boolean isDoorOpen();
 
 // Function declarations -------------------------------------------------------
 
+boolean isValidSound() {
+    return validSound;
+}
+
+void setValidSound(boolean b) {
+    validSound = b;
+}
+
 void dosRecv_setup()
 {
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(I2SI_DATA,INPUT);
-  digitalWrite(LED_PIN, LOW);
+  //pinMode(LED_PIN, OUTPUT);
+  //pinMode(I2SI_DATA,INPUT);
+  //digitalWrite(LED_PIN, LOW);
 
-  Serial.begin(115200);
+  //Serial.begin(115200);
   Serial.printf("Heap size: %u\n", ESP.getFreeHeap());
-
   xTaskCreate(initTask, "initTask", 16384, NULL, 1, NULL);
 }
 
@@ -121,21 +132,19 @@ void onStateChangedCallback(void *chirp, chirp_sdk_state_t previous, chirp_sdk_s
 void onReceivingCallback(void *chirp, uint8_t *payload, size_t length, uint8_t channel)
 {
   Serial.println("Receiving data...");
-  digitalWrite(LED_PIN, HIGH);
+  //digitalWrite(LED_PIN, HIGH);
 }
 
-void onReceivedCallback(void *chirp, uint8_t *payload, size_t length, uint8_t channel)
-{
-  if (payload)
-  {
+void onReceivedCallback(void *chirp, uint8_t *payload, size_t length, uint8_t channel) {
+  if (payload) {
     char *data = (char *)calloc(length + 1, sizeof(uint8_t));
     memcpy(data, payload, length * sizeof(uint8_t));
     Serial.print("Received data: ");
     Serial.println(data);
+    if(!(isDoorOpen())) validSound = true;
     free(data);
-  }
-  else
-  {
+
+  } else {
     Serial.println("Decode failed.");
   }
 }

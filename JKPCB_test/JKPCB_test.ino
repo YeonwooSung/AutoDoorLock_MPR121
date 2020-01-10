@@ -6,17 +6,24 @@ void motorControl_brake();
 // intHandler tab
 void intHandler_setup();
 void intHandler_main();
+void enablePhoto1Int();
+void disablePhoto1Int();
 void enablePhoto2Int();
 void disablePhoto2Int();
 void enableMsensorInt();
 void disableMsensorInt();
 uint16_t getIntMsensorObtain();
+uint16_t getIntPhoto1Obtain();
 uint16_t getIntPhoto2Obtain();
+uint16_t getIntPIRObtain();
+void setIntPIRObtain(uint16_t val);
+void setIntPhoto1Obtain(uint16_t val);
 void setIntPhoto2Obtain(uint16_t val);
 void setIntMsensorObtain(uint16_t val);
 // touchPanel
 void touchPanel_setup();
 void touchPanel_main();
+void jiipKeyWakeUp();
 // data over sound Receive Panel
 void dosRecv_setup();
 void dosRecv_main();
@@ -41,6 +48,8 @@ unsigned long door_timer = 0;
 
 
 boolean isDoorOpen() {
+    //if(door_is_opened) Serial.println("Door status is open");
+    //else Serial.println("Door status is closed");
     return door_is_opened;
 }
 
@@ -93,31 +102,38 @@ void setup() {
     //i2s_analog_setup();
     motorControl_setup();
     touchPanel_setup();
-    //dosRecv_setup();
+    dosRecv_setup();
     buzzerControl_setup();
 }
 
 void loop() {
+    if (getIntPIRObtain()) {
+        //Serial.println("getIntPIRObtain() is executed (loop)");
+        jiipKeyWakeUp();
+        setIntPIRObtain(0);
+    }
+
     if (needToCloseDoor) {
+        //Serial.println("needToCloseDoor is true (loop)");
         closeDoor();
         needToCloseDoor = false;
         return;
     }
 
     if (isDoorOpen()) {
+        //Serial.println("isDoorOpen() is executed (loop)");
+
         // check timeout  ->  alarm
         if (needToCheckTimer && millis() > door_timer) {
             buzzer_supermario();
         }
 
-        //TODO check msensor_flag -> door close
+        // check msensor_flag -> door close
         if (needToCheckMSensor && getIntMsensorObtain() != 0) {
             needToCloseDoor = true;
             return;
         }
     }
-
-    //TODO if the door is closed, then the msensor interrupt should be disabled.
 
     //intHandler_main();
     //i2s_analog_main();

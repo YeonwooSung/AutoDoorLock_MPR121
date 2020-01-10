@@ -1,7 +1,8 @@
 #define SWITCH_PIN        0      // Pin number for on-board switch
 #define PHOTO1_PIN      35
 #define PHOTO2_PIN      27
-#define PIR_PIN         36
+#define PIR_PIN         39
+#define BAT_PIN         36
 #define MSENSOR_PIN     34
 #define TOUCH_IRQ_PIN   12
 
@@ -11,6 +12,14 @@ uint16_t intPhoto1Obtain = 0;
 uint16_t intPhoto2Obtain = 0;
 uint16_t intMsensorObtain = 0;
 uint16_t intTouchIRQObtain = 0;
+
+uint16_t getIntPIRObtain() {
+    return intPIRObtain;
+}
+
+void setIntPIRObtain(uint16_t val) {
+    intPIRObtain = val;
+}
 
 uint16_t getIntMsensorObtain() {
     return intMsensorObtain;
@@ -57,14 +66,12 @@ void IRAM_ATTR PIR_ISR() {
 // Interrupt handler for 
 void IRAM_ATTR Photo1_ISR() {
     // Interrupt flag on
-    Serial.print("p1 int\n");
     intPhoto1Obtain = 1;
 }
 
 // Interrupt handler for 
 void IRAM_ATTR Photo2_ISR() {
     // Interrupt flag on
-    Serial.print("p2 int\n");
     intPhoto2Obtain = 1;
 }
 
@@ -78,7 +85,6 @@ void IRAM_ATTR TouchIRQ_ISR() {
 // Interrupt handler for 
 void IRAM_ATTR Msensor_ISR() {
     // Interrupt flag on
-    Serial.print("M  int\n");
     intMsensorObtain = 1;
 }
 
@@ -127,10 +133,11 @@ void intHandler_setup() {
     attachInterrupt(digitalPinToInterrupt(PHOTO1_PIN), Photo1_ISR, FALLING);
     pinMode(PHOTO2_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(PHOTO2_PIN), Photo2_ISR, FALLING);
-    pinMode(PIR_PIN, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIR_ISR, FALLING);   
+    pinMode(PIR_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIR_ISR, RISING);
     pinMode(MSENSOR_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(MSENSOR_PIN), Msensor_ISR, FALLING);
+    pinMode(BAT_PIN, INPUT);
     //pinMode(TOUCH_IRQ_PIN, INPUT_PULLUP);
     //attachInterrupt(digitalPinToInterrupt(TOUCH_IRQ_PIN), TouchIRQ_ISR, FALLING);
 }
@@ -139,6 +146,13 @@ void intHandler_setup() {
  * 
  */
 void intHandler_main() {
+//  int val = 0;
+//  val = analogRead(PIR_PIN);
+//  Serial.println(val);
+
+//  Serial.print("BAT ");
+//  Serial.println(analogRead(BAT_PIN));
+  
   if(intSWObtain) {
     Serial.println("Interrupt from on-board switch");
     intSWObtain = 0;
@@ -159,8 +173,4 @@ void intHandler_main() {
     Serial.println("Interrupt from Msensor happen");
     intMsensorObtain = 0;
   }
-//  if(intTouchIRQObtain) {
-//    Serial.println("Interrupt from Touch happen");
-//    intTouchIRQObtain = 0;
-//  }  
 }
