@@ -37,9 +37,6 @@ void buzzer_supermario();
 void nowMonitoring_setup();
 void now_sendMessage(String msg);
 
-//TODO test!
-void touchPanel_test();
-void open_close_test();
 
 #include "chirp_sdk.h"
 
@@ -110,29 +107,44 @@ void closeDoor() {
 void setup() {
     Serial.begin(115200);
 
-    //intHandler_setup();
-    //motorControl_setup();
-    //touchPanel_setup();
-    //dosRecv_setup();
-    //buzzerControl_setup();
-    nowMonitoring_setup();
-
-    //open_close_test();
+    intHandler_setup();
+    //i2s_analog_setup();
+    motorControl_setup();
+    touchPanel_setup();
+    dosRecv_setup();
+    buzzerControl_setup();
+    //nowMonitoring_setup();
 }
 
 void loop() {
-//    if (getIntPIRObtain()) {
-//        Serial.println("Wake up by PIR\n");
-//        jiipKeyWakeUp();
-//        setIntPIRObtain(0);
-//    }
+    if (getIntPIRObtain()) {
+        jiipKeyWakeUp();
+        setIntPIRObtain(0);
+    }
+
+    if (needToCloseDoor) {
+        closeDoor();
+        needToCloseDoor = false;
+        return;
+    }
+
+    if (isDoorOpen()) {
+        // check timeout  ->  alarm
+        if (needToCheckTimer && millis() > door_timer) {
+            buzzer_supermario();
+        }
+
+        // check msensor_flag -> door close
+        if (needToCheckMSensor && getIntMsensorObtain() != 0) {
+            needToCloseDoor = true;
+            return;
+        }
+    } 
 
     //intHandler_main();
     //i2s_analog_main();
     //motorControl_main();
     //touchPanel_main();
     //dosRecv_main();
-    now_sendMessage("Test Message");
-
-    //touchPanel_test();
+    //now_sendMessage("Test Message");
 }

@@ -13,7 +13,6 @@
 void  motorControl_fwd();
 void motorControl_brake();
 void buzzer_test();
-void playSampleSong();
 void buzzer_hello_world();
 void buzzer_wrongInput();
 void set_door_is_opened();
@@ -39,7 +38,7 @@ boolean isValidSound();
 void setValidSound(boolean b);
 void buzzer_touchPanel(unsigned int key_index);
 
-void now_sendMessage(String msg);
+
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 cap = Adafruit_MPR121();
@@ -52,7 +51,7 @@ uint16_t currtouched = 0;
 const int INPUT_LIMIT = 32;
 const char MAP[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, '*', 0 , '#'};
 
-char KEY_VAL[33] = {1, '#'};
+char KEY_VAL[33] = {8, 1, 2, 3, '#'};
 
 unsigned int input_index = 0;
 unsigned char inputVal[33] = {};
@@ -169,10 +168,17 @@ void touchPanel_setup() {
   pinMode(LED_PIN, OUTPUT);
 
   cap.setThresholds(5, 4);
+//  for (uint8_t i = 0; i < 12; i++) {
+//    uint8_t touchVal = cap.readRegister8(0x41 + 2 * i);
+//    uint8_t releaseVal = cap.readRegister8(0x42 + 2 * i);
+//
+//    Serial.print(touchVal);
+//    Serial.print("\t");
+//    Serial.println(releaseVal);
+//  }
 }
 
 void jiipKeyWakeUp() {
-  Serial.println("jiipKeyWakeup()");
     isWokenUp = true;
     background_LED_on();
     setUpTimeLimit();
@@ -183,13 +189,10 @@ void jiipKeyWakeUp() {
 void jiipKeySleep() {
     isWokenUp = false;
     resetInput();
-    Serial.println("jiipKeySleep()");
-    //disableTouchInt();
     currtouched = cap.touched();  // Just for flush buffer
     setIntTouchIRQObtain(0);
-    //enableTouchInt();
-    enablePIRInt();
     background_LED_off();
+    enablePIRInt();
 }
 
 void getOneKey(){
@@ -204,17 +207,14 @@ void getOneKey(){
       return;
   }
 
-  //TODO
-  boolean isTouched = false;
-  uint8_t touchedVal = 0;
-
   for (uint8_t i = 0; i < 12; i++) {
     // it if *is* touched and *wasnt* touched before, alert!
     if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
+      //            Serial.print(i);
+      //            Serial.println(" touched");
+
         if (input_index < INPUT_LIMIT) {
             buildInput(i);
-            touchedVal = i;
-            isTouched = true;
         } else {
             needToBlink = true;
             input_is_wrong = true;
@@ -224,13 +224,17 @@ void getOneKey(){
             inputVal[33];
         }
     }
+
+    // if it *was* touched and now *isnt*, alert!
+    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
+      //            Serial.print(i);
+      //            Serial.println(" released");
+    }
   }
 
   // reset our state
   lasttouched = currtouched;
-  intTouchIRQObtain = 0;
-
-  if (isTouched) buzzer_touchPanel(touchedVal);
+  intTouchIRQObtain = 0; 
 }
 
 void door_open() {
@@ -261,7 +265,6 @@ void led_blink() {
     if (input_is_wrong) {
         buzzer_wrongInput();
         //buzzer_test();
-        //playSampleSong();
         input_is_wrong = false;
     }
 
@@ -276,77 +279,26 @@ void led_blink() {
 }
 
 void process_timeout() {
-    Serial.println("Timeout");
+    Serial.println("Timeout!!");
     jiipKeySleep();
     // reset our state
     lasttouched = currtouched;
     intTouchIRQObtain = 0;
 }
 
-boolean checker1 = false;
-
 void touchPanel_main() {
-//    if (time_limit != 0 && millis() > time_limit) {
-//        process_timeout();
-//        return;
-//    }
+    if (time_limit != 0 && millis() > time_limit) {
+        process_timeout();
+        return;
+    }
     if (needToBlink) {
         led_blink();
         return;
     }
     if (isValidInput || isValidSound()) {
-        if (checker1) {
-            closeDoor();
-            isValidInput = false;
-            setValidSound(false);
-            checker1 = false;
-            jiipKeySleep();
-        } else {
-            door_open();
-            checker1 = true;
-        }
-        //door_open();
+        door_open();
         return;
     }
     if (intTouchIRQObtain == 0) return;
     getOneKey();
-}
-
-
-void touchPanel_test() {
-  if (intTouchIRQObtain == 0) return;
-
-  Serial.println("Touch IRQ");
-  // Get the currently touched pads
-  currtouched = cap.touched();
-  Serial.print("currTouched : ");
-  Serial.println(currtouched);
-
-  boolean isTouched = false;
-  uint8_t touchedVal = 0;
-
-  for (uint8_t i = 0; i < 12; i++) {
-    // it if *is* touched and *wasnt* touched before, alert!
-    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
-      Serial.print(i); Serial.println(" touched");
-      touchedVal = i;
-      isTouched = true;
-    }
-    // if it *was* touched and now *isnt*, alert!
-    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
-      Serial.print(i); Serial.println(" released");
-    }
-  }
-  // reset our state
-  lasttouched = currtouched;
-  intTouchIRQObtain = 0;
-
-  if (isTouched) buzzer_touchPanel(touchedVal);
-}
-
-void open_close_test() {
-    door_open();
-    delay(2000);
-    closeDoor();
-    delay(2000);
 }

@@ -55,7 +55,7 @@ void motorControl_setup()
     // MOTOR FWD
   ledcSetup(MOTOR_FWD_CHANNEL, MOTOR_FREQ, MOTOR_RESOLUTION);
   ledcAttachPin(MOTOR_FWD_PIN, MOTOR_FWD_CHANNEL);
-
+  
     // LED Red
   ledcSetup(LED_RED_CHANNEL, LED_FREQ, LED_RESOLUTION);
   ledcAttachPin(LED_RED_PIN, LED_RED_CHANNEL);
@@ -207,13 +207,13 @@ void  led_rgb_test2() {
 }
 
 void  motorControl_fwd() {
-      ledcWrite(MOTOR_FWD_CHANNEL, 1024);  // 70%
+      ledcWrite(MOTOR_FWD_CHANNEL, 716);  // 70%
       ledcWrite(MOTOR_REV_CHANNEL, 0);
 }
 
 void  motorControl_rev() {
-      ledcWrite(MOTOR_FWD_CHANNEL, 0);
-      ledcWrite(MOTOR_REV_CHANNEL, 1024);  // 70%
+      ledcWrite(MOTOR_FWD_CHANNEL, 0);  
+      ledcWrite(MOTOR_REV_CHANNEL, 716);  // 70%
 }
 
 void  motorControl_brake() {
@@ -224,7 +224,8 @@ void  motorControl_brake() {
 void motorControl_test() {
   int demoCount = 0;
   Serial.println("Motor Control Test");
-  while(demoCount < 5) {
+  while(demoCount < 5)
+  {
     motorControl_fwd();
     // wait for 30 milliseconds to see the dimming effect
     delay(1000);
